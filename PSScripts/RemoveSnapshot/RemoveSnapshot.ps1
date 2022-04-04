@@ -54,23 +54,27 @@
  
  #Parameters
  param(
-        [Parameter(
-            Mandatory=$True
-        )]
-        [string] $SMTPServer,       
-        [string] $SMTPSender,
-        [string] $SMTPDelivery,
-        [string] $vCenter,
-        [string] $vCenterUser,
-        [string] $vCenterPassword,
+
+    [Parameter(Mandatory=$True)]
+    [string] $SMTPServer,
+    [Parameter(Mandatory=$True)]       
+    [string] $SMTPSender,
+    [Parameter(Mandatory=$True)]
+    [string] $SMTPDelivery,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenter,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenterUser,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenterPassword,
 
      
-        [Parameter(
-            Mandatory=$False
-        )]
-        [string] $SMTPPassword,
-        [string] $VM="*",
-        [int] $Days=30
+    [Parameter(Mandatory=$False)]
+    [string] $SMTPPassword,
+    [Parameter(Mandatory=$False)]
+    [string] $VM="*",
+    [Parameter(Mandatory=$False)]
+    [int] $Days=30
     )
 
   
@@ -79,7 +83,7 @@ $location = Get-Location
 $today = Get-Date
 
 #A wrapper function to handle the case of whether or not we are using credentials to send the email. Found myself Re-writing this block a bit thorughout the script
-function Send-EmailResults{
+function Private:Send-EmailResults{
  param(
         [Parameter(
             Mandatory=$True
@@ -117,7 +121,7 @@ try{
 
 catch{
     Write-Host "Failed to create log file."
-    Email-Results -SmtpServer $SMTPServer -To $SMTPDelivery -From $SMTPSender -Subject "Automated Snapshot Removal Report Failed" -Body "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to create the log file used for reporting. Please investigate. `n`nError: $_.Exception.Message" -Password $SMTPPassword
+    Send-EmailResults -SmtpServer $SMTPServer -To $SMTPDelivery -From $SMTPSender -Subject "Automated Snapshot Removal Report Failed" -Body "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to create the log file used for reporting. Please investigate. `n`nError: $_.Exception.Message" -Password $SMTPPassword
     Break
 }
 
@@ -127,7 +131,7 @@ try{
 }
 catch{
     Write-Host "Failed Connecting to VSphere Server."
-    Email-Results -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal Report Fialed" -Body `
+    Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal Report Failed" -Body `
     "This email is being sent from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to connect ot vCenter with IP/URL: $vCenter. Please investigate. `n`nError: $_.Exception.Message" -SmtpServer $SMTPServer -Password $SMTPPassword
     Break
  }
@@ -152,12 +156,10 @@ else{
 }
 # Send snapshot log to email. Could make this pretty if I had more time/desire. The information being sent now works though. 
 $emailbody = (Get-Content $location\SnapshotLog.txt | Out-String)
-    Email-Results -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal" -Body $emailbody -SmtpServer $SMTPServer -Password $SMTPPassword
+Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal" -Body $emailbody -SmtpServer $SMTPServer -Password $SMTPPassword
 
 # Exit VIM server session.
 disconnect-viserver -server $vCenter -Confirm:$false
  
 # Cleanup logs 
 Remove-Item $location\SnapshotLog.txt -Confirm:$false -Force
-
-
