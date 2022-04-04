@@ -35,32 +35,35 @@ There is only one function exposed publicly, as this was written with the sole p
   
 This function has many parameters.
   
-SMTPServer
-The SMTP server to relay the email to.
+**SMTPServer**
+- The SMTP server to relay the email to.
 
-SMTPSender
-The FROM address of the email sender.
+**SMTPSender**
+- The FROM address of the email sender.
 
-SMTPDelivery
-The TO address of the email recipient.
+**SMTPDelivery**
+- The TO address of the email recipient.
 
-SMTPPassword
-An optional parameter in the case that you need to pass the SMTPDelivery password to the script for the SMTP relay.
+**SMTPPassword**
+- An optional parameter in the case that you need to pass the SMTPDelivery password to the script for the SMTP relay.
 
-vCenter
-IP or URL of the vCenter Server.
+**vCenter**
+- IP or URL of the vCenter Server.
 
-vCenterUser
-vCenter account that has proper permissions to remove snapshots from the VMs.
+**vCenterUser**
+- vCenter account that has proper permissions to remove snapshots from the VMs.
 
-vCenterPassword
-Password for vCenterUser.
+**vCenterPassword**
+- Password for vCenterUser.
 
-VM
-Optional search string for the VM(s) to remove the snapshots from. Default is all.
+**VM**
+- Optional search string for the VM(s) to remove the snapshots from. Default is all.
 
-Days
-Optinoal int to specify the minimum age in days for the snapshots that need deleted. Default is 30.
+**Days**
+- Optional int to specify the minimum age in days for the snapshots that need deleted. Default is 30.
+
+
+**Examples**
 
 The following example uses the minimum required perameters. This assumes no password is needed for SMTP, all VMs will be scanned, and snapshots older than 30 days will be removed:
 
@@ -88,5 +91,3 @@ These functions are not exposed when the module is imported. These functions are
 **Send-EmailResults**
 
 A wrapper function for Send-MailMessage based on whether or not the SMTP password was provided. 
-
-
