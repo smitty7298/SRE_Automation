@@ -37,7 +37,7 @@
     The minimum age in days for the snapshots that need deleted. Default is 30. 
 
 .EXAMPLE
-    PS C:\> RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" 
+    RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" 
 
 .EXAMPLE 
     RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPPassword "emailPassword123" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" -VM "*Z1000*" -Days 100
@@ -51,29 +51,7 @@
 #>
  
  #Parameters
- param(
 
-    [Parameter(Mandatory=$True)]
-    [string] $SMTPServer,
-    [Parameter(Mandatory=$True)]       
-    [string] $SMTPSender,
-    [Parameter(Mandatory=$True)]
-    [string] $SMTPDelivery,
-    [Parameter(Mandatory=$True)]
-    [string] $vCenter,
-    [Parameter(Mandatory=$True)]
-    [string] $vCenterUser,
-    [Parameter(Mandatory=$True)]
-    [string] $vCenterPassword,
-
-     
-    [Parameter(Mandatory=$False)]
-    [string] $SMTPPassword,
-    [Parameter(Mandatory=$False)]
-    [string] $VM="*",
-    [Parameter(Mandatory=$False)]
-    [int] $Days=30
-    )
 
   
 # Variables
@@ -109,55 +87,81 @@ function Private:Send-EmailResults{
              
 }
 
-# Load powercli and install it if I don't have it (I might be overthinking this).
-if(!(Get-Module -ListAvailable -Name "VMware.PowerCLI")){[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -scope CurrentUser -force -confirm:$false -SkipPublisherCheck}
+function Remove-Snapshot{
+    param(
 
-#Let's create the log file that is used to send the reporting email. If we run into an error here then we really have some problems. 
-try{
-    Write-Output "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME on $today. The below snapshots have been removed from the system:" | Out-File $location\SnapshotLog.txt -Append -ErrorAction Stop
-}
+        [Parameter(Mandatory=$True)]
+        [string] $SMTPServer,
+        [Parameter(Mandatory=$True)]       
+        [string] $SMTPSender,
+        [Parameter(Mandatory=$True)]
+        [string] $SMTPDelivery,
+        [Parameter(Mandatory=$True)]
+        [string] $vCenter,
+        [Parameter(Mandatory=$True)]
+        [string] $vCenterUser,
+        [Parameter(Mandatory=$True)]
+        [string] $vCenterPassword,
+    
+         
+        [Parameter(Mandatory=$False)]
+        [string] $SMTPPassword,
+        [Parameter(Mandatory=$False)]
+        [string] $VM="*",
+        [Parameter(Mandatory=$False)]
+        [int] $Days=30
+        )
 
-catch{
-    Write-Host "Failed to create log file."
-    Send-EmailResults -SmtpServer $SMTPServer -To $SMTPDelivery -From $SMTPSender -Subject "Automated Snapshot Removal Report Failed" -Body "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to create the log file used for reporting. Please investigate. `n`nError: $_.Exception.Message" -Password $SMTPPassword
-    Break
-}
+    # Load powercli and install it if I don't have it (I might be overthinking this).
+    if(!(Get-Module -ListAvailable -Name "VMware.PowerCLI")){[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -scope CurrentUser -force -confirm:$false -SkipPublisherCheck}
 
-# Connect to vSphere vCenter Server.
-try{
-    connect-viserver -server $vCenter -user $vCenterUser -Password $vCenterPassword -ErrorAction Stop
-}
-catch{
-    Write-Host "Failed Connecting to VSphere Server."
-    Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal Report Failed" -Body `
-    "This email is being sent from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to connect ot vCenter with IP/URL: $vCenter. Please investigate. `n`nError: $_.Exception.Message" -SmtpServer $SMTPServer -Password $SMTPPassword
-    Break
- }
+    #Let's create the log file that is used to send the reporting email. If we run into an error here then we really have some problems. 
+    try{
+        Write-Output "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME on $today. The below snapshots have been removed from the system:" | Out-File $location\SnapshotLog.txt -Append -ErrorAction Stop
+    }
 
-# Check to see if there are snapshots that need cleaning up, then do it to it starting with the oldest.
-if($oldSnapshots= get-snapshot -vm $VM | Where-Object {$_.Created -lt (Get-Date).AddDays(-$Days)} | Sort-Object -Descending){
-    foreach ($snapshot in $oldSnapshots){
-        try{
-        $size=$snapshot.SizeGB #Getting this stat now. This goes to 0 after Remove-Snapshot is run
-        $snapshot | Remove-Snapshot -Confirm:$false -ErrorAction Stop 
-        Write-Output $snapshot | Select-Object VM, Name, Description, @{Name="DaysSinceCreated";Expression={((Get-Date)-$_.Created).Days}},@{Name="Status";Expression={"Removed"}},@{Name="SnapshotSizeGB";Expression={$size}} | Out-File $location\SnapshotLog.txt -Append
-        }
-        
-        catch{
-        $thiserror= $_.Exception.Message 
-        Write-Output $snapshot | Select-Object VM, Name, SizeMB, @{Name="DaysSinceCreated";Expression={((Get-Date)-$_.Created).Days}},@{Name="Status";Expression={$thiserror}} | Out-File $location\SnapshotLog.txt -Append
+    catch{
+        Write-Host "Failed to create log file."
+        Send-EmailResults -SmtpServer $SMTPServer -To $SMTPDelivery -From $SMTPSender -Subject "Automated Snapshot Removal Report Failed" -Body "This email has been generated from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to create the log file used for reporting. Please investigate. `n`nError: $_.Exception.Message" -Password $SMTPPassword
+        Break
+    }
+
+    # Connect to vSphere vCenter Server.
+    try{
+        connect-viserver -server $vCenter -user $vCenterUser -Password $vCenterPassword -ErrorAction Stop   
+    }
+    catch{
+        Write-Host "Failed Connecting to VSphere Server."
+        Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal Report Failed" -Body `
+        "This email is being sent from the Automated Snapshot Removal process running on $env:COMPUTERNAME. Unable to connect ot vCenter with IP/URL: $vCenter. Please investigate. `n`nError: $_.Exception.Message" -SmtpServer $SMTPServer -Password $SMTPPassword
+        Break
+     }
+
+    # Check to see if there are snapshots that need cleaning up, then do it to it starting with the oldest.
+    if($oldSnapshots= get-snapshot -vm $VM | Where-Object {$_.Created -lt (Get-Date).AddDays(-$Days)} | Sort-Object -Descending){
+        foreach ($snapshot in $oldSnapshots){
+            try{
+            $size=$snapshot.SizeGB #Getting this stat now. This goes to 0 after Remove-Snapshot is run
+            $snapshot | Remove-Snapshot -Confirm:$false -ErrorAction Stop 
+            Write-Output $snapshot | Select-Object VM, Name, Description, @{Name="DaysSinceCreated";Expression={((Get-Date)-$_.Created).Days}},@{Name="Status";Expression={"Removed"}},@{Name="SnapshotSizeGB";Expression={$size}} | Out-File $location\SnapshotLog.txt -Append
+            }
+
+            catch{
+            $thiserror= $_.Exception.Message 
+           Write-Output $snapshot | Select-Object VM, Name, SizeMB, @{Name="DaysSinceCreated";Expression={((Get-Date)-$_.Created).Days}},@{Name="Status";Expression={$thiserror}} | Out-File $location\SnapshotLog.txt -Append
+            }
         }
     }
+    else{
+        Write-Output "No Snapshots to clean up." | Out-File $logpath\Snapshots_$date.txt -Append
+    }
+    # Send snapshot log to email. Could make this pretty if I had more time/desire. The information being sent now works though. 
+    $emailbody = (Get-Content $location\SnapshotLog.txt | Out-String)
+    Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal" -Body $emailbody -SmtpServer $SMTPServer -Password $SMTPPassword
+    
+    # Exit VIM server session.
+    disconnect-viserver -server $vCenter -Confirm:$false
+    
+    # Cleanup logs 
+    Remove-Item $location\SnapshotLog.txt -Confirm:$false -Force
 }
-else{
-    Write-Output "No Snapshots to clean up." | Out-File $logpath\Snapshots_$date.txt -Append
-}
-# Send snapshot log to email. Could make this pretty if I had more time/desire. The information being sent now works though. 
-$emailbody = (Get-Content $location\SnapshotLog.txt | Out-String)
-Send-EmailResults -From $SMTPSender -To $SMTPDelivery -Subject "Automated Snapshot Removal" -Body $emailbody -SmtpServer $SMTPServer -Password $SMTPPassword
-
-# Exit VIM server session.
-disconnect-viserver -server $vCenter -Confirm:$false
- 
-# Cleanup logs 
-Remove-Item $location\SnapshotLog.txt -Confirm:$false -Force
