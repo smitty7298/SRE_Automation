@@ -37,12 +37,10 @@
     The minimum age in days for the snapshots that need deleted. Default is 30. 
 
 .EXAMPLE
-    The example uses the minimum required perameters. This assumes no password is needed for SMTP, all VMs will be scanned, and snapshots older than 30 days will be removed. 
     PS C:\> RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" 
 
-.EXAMPLE
-    The example uses the all optional perameters. This assigns a password for the SMPTDelivery account, only VMs with "Z1000" in their name will be scanned, and snapshots older than 100 days will be removed. 
-    PS C:\> RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPPassword "emailPassword123" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" -VM "*Z1000*" -Days 100
+.EXAMPLE 
+    RemoveSnapshots.ps1 -SMTPServer "smtp.office365.com" -SMTPSender "security.portal@dizzion.com" -SMTPPassword "emailPassword123" -SMTPDelivery "tyler.smith@dizzion.com" -vCenter "thelab.dizzion.com" -vCenterUser "administrator@vsphere.local" -vCenterPassword "password123" -VM "*Z1000*" -Days 100
 
 .NOTES
     Author: Tyler Smith
