@@ -52,7 +52,29 @@
  
  #Parameters
 
+ param(
 
+    [Parameter(Mandatory=$True)]
+    [string] $SMTPServer,
+    [Parameter(Mandatory=$True)]       
+    [string] $SMTPSender,
+    [Parameter(Mandatory=$True)]
+    [string] $SMTPDelivery,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenter,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenterUser,
+    [Parameter(Mandatory=$True)]
+    [string] $vCenterPassword,
+
+     
+    [Parameter(Mandatory=$False)]
+    [string] $SMTPPassword,
+    [Parameter(Mandatory=$False)]
+    [string] $VM="*",
+    [Parameter(Mandatory=$False)]
+    [int] $Days=30
+    )
   
 # Variables
 $location = Get-Location 
@@ -87,30 +109,8 @@ function Private:Send-EmailResults{
              
 }
 
-function Remove-Snapshot{
-    param(
 
-        [Parameter(Mandatory=$True)]
-        [string] $SMTPServer,
-        [Parameter(Mandatory=$True)]       
-        [string] $SMTPSender,
-        [Parameter(Mandatory=$True)]
-        [string] $SMTPDelivery,
-        [Parameter(Mandatory=$True)]
-        [string] $vCenter,
-        [Parameter(Mandatory=$True)]
-        [string] $vCenterUser,
-        [Parameter(Mandatory=$True)]
-        [string] $vCenterPassword,
-    
-         
-        [Parameter(Mandatory=$False)]
-        [string] $SMTPPassword,
-        [Parameter(Mandatory=$False)]
-        [string] $VM="*",
-        [Parameter(Mandatory=$False)]
-        [int] $Days=30
-        )
+
 
     # Load powercli and install it if I don't have it (I might be overthinking this).
     if(!(Get-Module -ListAvailable -Name "VMware.PowerCLI")){[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; Install-Module -scope CurrentUser -force -confirm:$false -SkipPublisherCheck}
@@ -153,7 +153,7 @@ function Remove-Snapshot{
         }
     }
     else{
-        Write-Output "No Snapshots to clean up." | Out-File $logpath\Snapshots_$date.txt -Append
+        Write-Output "No Snapshots to clean up." | Out-File $location\SnapshotLog.txt -Append
     }
     # Send snapshot log to email. Could make this pretty if I had more time/desire. The information being sent now works though. 
     $emailbody = (Get-Content $location\SnapshotLog.txt | Out-String)
@@ -164,4 +164,3 @@ function Remove-Snapshot{
     
     # Cleanup logs 
     Remove-Item $location\SnapshotLog.txt -Confirm:$false -Force
-}
