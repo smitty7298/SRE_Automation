@@ -30,7 +30,7 @@ There is only one function exposed publicly, as this was written with the sole p
 
   
 
-**Remove-Snapshots** This is the main command used to remove the snapshots in vCenter. It requires all SMTP and vCenter parameters to be passed to it. 
+**Remove-Snapshots** Future function. As of now the script is used as a stand-alone automation procedure. Will add a function for the Remove-Snapshots portion so the script is more re-usable. For now, see below examples for execution examples. 
 
   
 This function has many parameters.
